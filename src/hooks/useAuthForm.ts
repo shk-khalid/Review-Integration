@@ -1,6 +1,3 @@
-/**
- * Hook for managing authentication form state and validation
- */
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +8,7 @@ export type AuthMode = 'login' | 'register';
 
 export function useAuthForm() {
   const [mode, setMode] = useState<AuthMode>('login');
-  const { login, register, isLoading } = useAuth();
+  const { login, register, isLoading, googleLogin } = useAuth();
   const [formData, setFormData] = useState<AuthFormData>({
     email: '',
     password: '',
@@ -29,6 +26,9 @@ export function useAuthForm() {
       password: '',
       name: '',
       confirmPassword: '',
+    });
+    toast(`Switched to ${mode === 'login' ? 'register' : 'login'} mode`, {
+      icon: 'ℹ️', // Info icon
     });
   };
 
@@ -68,7 +68,7 @@ export function useAuthForm() {
    */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     try {
@@ -78,7 +78,7 @@ export function useAuthForm() {
           password: formData.password,
         };
         await login(credentials);
-        toast.success('Successfully logged in!');
+        toast.success('Successfully logged in! Redirecting...');
       } else {
         const credentials: RegisterCredentials = {
           email: formData.email,
@@ -86,12 +86,34 @@ export function useAuthForm() {
           name: formData.name,
         };
         await register(credentials);
-        toast.success('Successfully registered!');
+        toast.success('Successfully registered! Redirecting...');
       }
     } catch (error) {
-      const message = error instanceof ApiError 
-        ? error.message 
-        : 'Authentication failed. Please try again.';
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : 'Authentication failed. Please try again.';
+      toast.error(message);
+    }
+  };
+
+  /**
+   * Handles Google login
+   */
+  const handleGoogleLogin = async () => {
+    try {
+      toast('Redirecting to Google for authentication...', {
+        icon: '🔗', // Custom icon for redirection
+      });
+      const redirectUrl = await googleLogin?.();
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
+    } catch (error) {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : 'Google login failed. Please try again.';
       toast.error(message);
     }
   };
@@ -103,5 +125,6 @@ export function useAuthForm() {
     toggleMode,
     handleChange,
     handleSubmit,
+    handleGoogleLogin,
   };
 }

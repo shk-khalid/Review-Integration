@@ -15,6 +15,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const { user } = useAuth();
+  // If the user is logged in, redirect to the Business List page.
+  // Otherwise, show the authentication page (login/signup).
   return user ? <Navigate to="/businesses" /> : <Auth />;
 }
 
@@ -25,7 +27,10 @@ function App() {
         <AuthProvider>
           <Toaster position="top-right" />
           <Routes>
+            {/* Authentication Route */}
             <Route path="/auth" element={<AppContent />} />
+            
+            {/* Businesses Page - Protected Route */}
             <Route
               path="/businesses"
               element={
@@ -34,6 +39,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
+            {/* Dashboard - Protected Route with businessId */}
             <Route
               path="/dashboard/:businessId"
               element={
@@ -42,6 +49,8 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            
+            {/* Redirect to /auth if accessing an unknown route */}
             <Route path="/" element={<Navigate to="/auth" />} />
           </Routes>
         </AuthProvider>

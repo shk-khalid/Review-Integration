@@ -1,11 +1,6 @@
-/**
- * Authentication context provider and hook
- * Manages global authentication state and provides auth methods
- */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AuthContextType, User, LoginCredentials, RegisterCredentials } from '../types/auth';
 import { authService } from '../services/auth.service';
-import { googleAuthService } from '../services/google-auth.service';
 import { ApiError } from '../services/api';
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -15,9 +10,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize Google OAuth on mount
+  // On initial render, check if the user is already authenticated
   useEffect(() => {
-    googleAuthService.initialize().catch(console.error);
+    const initializeAuth = async () => {
+      setIsLoading(true);
+      try {
+        const fetchedUser = await authService.fetchProtectedData();
+        setUser(fetchedUser);
+      } catch (err) {
+        console.error('Failed to validate user session', err);
+        setUser(null); // Ensure the user is logged out if token validation fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (authService.getToken()) {
+      initializeAuth();
+    }
   }, []);
 
   /**
@@ -25,13 +35,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const handleAuth = async <T extends LoginCredentials | RegisterCredentials>(
     credentials: T,
-    authMethod: (creds: T) => Promise<User>
+    authMethod: (creds: T) => Promise<void>
   ) => {
     setIsLoading(true);
     setError(null);
     try {
-      const user = await authMethod(credentials);
-      setUser(user);
+      await authMethod(credentials);
+      const fetchedUser = await authService.fetchProtectedData(); // Fetch user details after login/register
+      setUser(fetchedUser);
+      window.location.href = '/businesses'; // Redirect to /businesses after successful login
     } catch (err) {
       const message = err instanceof ApiError 
         ? err.message 
@@ -47,29 +59,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isLoading,
     error,
-    login: (credentials) => handleAuth(credentials, authService.login.bind(authService)),
-    register: (credentials) => handleAuth(credentials, authService.register.bind(authService)),
-    googleSignIn: async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const user = await googleAuthService.signIn();
-        setUser(user);
-      } catch (err) {
-        const message = err instanceof ApiError 
-          ? err.message 
-          : 'Google authentication failed';
-        setError(message);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
+    login: async (credentials) => {
+      await handleAuth(credentials, authService.login.bind(authService));
+    },
+    register: async (credentials) => {
+      await handleAuth(credentials, authService.register.bind(authService));
     },
     logout: async () => {
       setIsLoading(true);
+      setError(null);
       try {
         await authService.logout();
         setUser(null);
+        window.location.href = '/'; // Redirect to home page on logout
       } catch (err) {
         const message = err instanceof ApiError 
           ? err.message 
@@ -78,7 +80,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } finally {
         setIsLoading(false);
       }
-    }
+    },
+    googleLogin: async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const redirectUrl = await authService.googleLogin(); // Expecting a string
+        window.location.href = redirectUrl; // Perform the redirection
+      } catch (err) {
+        const message = err instanceof ApiError 
+          ? err.message 
+          : 'Failed to initiate Google Sign-In';
+        setError(message);
+        throw err; // Optionally re-throw the error if needed
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    googleCallback: async (query: string) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        await authService.googleCallback(query);
+        const fetchedUser = await authService.fetchProtectedData();
+        setUser(fetchedUser);
+        window.location.href = '/businesses'; // Redirect to /businesses after successful Google login
+      } catch (err) {
+        const message = err instanceof ApiError 
+          ? err.message 
+          : 'Google Sign-In callback failed';
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
   };
 
   return (

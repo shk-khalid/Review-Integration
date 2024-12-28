@@ -12,7 +12,7 @@ export function Auth() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex flex-col items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 max-w-md w-full">
-          <h2 className="text-xl font-bold mb-4">Welcome, {user.username || user.email}!</h2>
+          <h2 className="text-xl font-bold mb-4">Welcome, {user.name || user.email}!</h2>
           <p className="text-gray-600 mb-4">You are now logged in.</p>
         </div>
       </div>

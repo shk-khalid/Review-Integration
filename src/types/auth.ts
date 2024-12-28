@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name?: string;
   password?: string;
+  token?: string;
 }
 
 export interface LoginCredentials {
@@ -21,7 +22,8 @@ export interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  googleSignIn: () => Promise<void>;
+  googleLogin?: () => Promise<void>;
+  googleCallback?: (query: string) => Promise<void>;
 }
 
 export interface AuthFormData {
