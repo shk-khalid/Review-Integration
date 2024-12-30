@@ -1,34 +1,42 @@
 export interface User {
   id: string;
+  name: string;
   email: string;
-  name?: string;
-  password?: string;
-  token?: string;
 }
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface RegisterCredentials extends LoginCredentials {
-  name?: string;
-}
-
-export interface AuthContextType {
+export interface AuthState {
   user: User | null;
-  isLoading: boolean;
-  error: string | null;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  register: (credentials: RegisterCredentials) => Promise<void>;
-  logout: () => Promise<void>;
-  googleLogin?: () => Promise<void>;
-  googleCallback?: (query: string) => Promise<void>;
+  isAuthenticated: boolean;
 }
 
-export interface AuthFormData {
+export interface GoogleCredentialResponse {
+  credential: string;
+  select_by: string;
+  client_id: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
   email: string;
-  password: string;
-  name?: string;
-  confirmPassword?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user_id: number;
+}
+
+export interface LoginResponse extends RegisterResponse {
+  token: string;
+}
+
+export interface GoogleAuthResponse {
+  token: string;
+  user: User;
+  message: string;
 }

@@ -1,4 +1,3 @@
-import React from 'react';
 import { DashboardHeader } from '../Dashboard/components/Header';
 import { BusinessCard } from './components/BusinessCard';
 import { useBusinesses } from './hooks/useBusinesses';

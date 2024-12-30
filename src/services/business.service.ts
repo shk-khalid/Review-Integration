@@ -7,7 +7,7 @@ class BusinessService {
   async getBusinesses(): Promise<Business[]> {
     try {
       return await axios.get(endpoints.businesses.list);
-    } catch (error) {
+    } catch (error: any) {
       throw new ApiError(error.response?.status || 500, 'Failed to fetch businesses');
     }
   }
@@ -15,7 +15,7 @@ class BusinessService {
   async getBusinessById(id: string): Promise<Business> {
     try {
       return await axios.get(endpoints.businesses.details(id));
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 404) {
         throw new ApiError(404, 'Business not found');
       }
@@ -26,7 +26,7 @@ class BusinessService {
   async getBusinessReviews(id: string) {
     try {
       return await axios.get(endpoints.businesses.reviews(id));
-    } catch (error) {
+    } catch (error: any) {
       throw new ApiError(error.response?.status || 500, 'Failed to fetch reviews');
     }
   }
@@ -34,7 +34,7 @@ class BusinessService {
   async replyToReview(reviewId: string, reply: string) {
     try {
       return await axios.post(endpoints.reviews.reply(reviewId), { reply });
-    } catch (error) {
+    } catch (error: any) {
       throw new ApiError(error.response?.status || 500, 'Failed to reply to review');
     }
   }
@@ -42,7 +42,7 @@ class BusinessService {
   async likeReview(reviewId: string) {
     try {
       return await axios.post(endpoints.reviews.like(reviewId));
-    } catch (error) {
+    } catch (error: any) {
       throw new ApiError(error.response?.status || 500, 'Failed to like review');
     }
   }
