@@ -1,33 +1,38 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
-import { AuthForm } from './components/AuthForm';
-import { BusinessList } from './pages/BusinessList/BusinessList';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { GoogleCallback } from './components/GoogleCallback';
+import { AuthProvider } from './hooks/useAuth';
+import { LoginForm } from './components/auth/LoginForm';
+import { SignupForm } from './components/auth/SignupForm';
+import { Dashboard } from './components/auth/demodashboard';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 
 function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <Toaster position="top-right" />
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<AuthForm mode="login" />} />
-          <Route path="/register" element={<AuthForm mode="register" />} />
-          <Route path="/google/callback" element={<GoogleCallback />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <BusinessList />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Router>
-    </AuthProvider>
-  );
+    return (
+        <AuthProvider>
+            <GoogleOAuthProvider clientId="887264470642-nq8uo33595hd3oj0fucj6jqg55ou72br.apps.googleusercontent.com">
+                <Router>
+                    <div className="main-content">
+                        <Routes>
+                            <Route path="/" element={<LoginForm />} />
+                            <Route path="/login" element={<LoginForm />} />
+                            <Route path="/register" element={<SignupForm />} />
+                            <Route
+                                path="/dashboard"
+                                element={
+                                    <ProtectedRoute>
+                                        <Dashboard />
+                                    </ProtectedRoute>
+                                }
+                            />
+                        </Routes>
+                    </div>
+                </Router>
+                <Toaster position="top-right" />
+            </GoogleOAuthProvider>
+        </AuthProvider>
+    );
 }
 
 export default App;

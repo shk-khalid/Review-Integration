@@ -1,19 +1,33 @@
-// Base API configuration
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import axios from 'axios';
 
-export class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
+const api = axios.create({
+  baseURL: 'http://localhost:5000',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true
+});
 
-export async function handleResponse<T>(response: Response | any): Promise<T> {
-  if (response instanceof Response && !response.ok) {
-    const error = await response.json().catch(() => ({ message: 'An error occured.'}));
-    throw new ApiError(response.status, error.message);
-  } else if(response instanceof Object && response?.response?.status) { 
-    throw new ApiError(response.response.status, response.response.data?.message || 'An error occured');
+// Add interceptor to include token in requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return response?.data || response;
-}
+  return config;
+});
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_id');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
