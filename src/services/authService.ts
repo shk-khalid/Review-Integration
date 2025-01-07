@@ -14,7 +14,7 @@ class AuthService {
     try {
       const response = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user_id', response.data.user_id);
+      localStorage.setItem('user', response.data.user);
       return response.data;
     } catch (error: any) {
       throw error.response ? error.response.data : error.message;

@@ -4,7 +4,7 @@ import AuthService from '../services/authService';
 
 interface User {
     name: string;
-    id: string;
+    id: number;
     email: string;
     is_oauth_user: boolean;
 }
@@ -21,7 +21,6 @@ interface AuthContextType {
     login: (email: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     register: (name: string, email: string, password: string) => Promise<void>;
-    getUserProfile: () => Promise<void>;
     loginGoogle: (code: string) => Promise<void>;
 }
 
@@ -45,14 +44,19 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await AuthService.login(email, password);
+            setState((prev) => ({
+                ...prev,
+                IsLoading: true,
+                error: null,
+            }));
+            const { token, user } = await AuthService.login(email, password);
+            localStorage.setItem("token", token);
             setState({
-                user: response.user,
+                user,
                 isAuthenticated: true,
                 isLoading: false,
                 error: null,
-            })
-            localStorage.setItem('token', response.token);
+            });
             toast.success("Login successful!");
         } catch (err) {
             setError('Login failed. Please try again.');
@@ -100,25 +104,6 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const getUserProfile = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const profile = await AuthService.getUserProfile();
-            setState((prevState) => ({
-                ...prevState,
-                user: profile.user,
-                isAuthenticated: true,
-            }));
-        } catch (err) {
-            setError('Error fetching profile. Please try again.');
-            toast.error('Error fetching profile. Please try again.');
-            console.error('Error fetching profile:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
     const loginGoogle = async (code: string) => {
         try {
             setState((prev) => ({
@@ -148,29 +133,43 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
-    // Load user data when the app starts
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            AuthService.getUserProfile()
-                .then((user) => setState({
-                    user,
-                    isAuthenticated: true,
-                    isLoading: false,
-                    error: null,
-                }))
-                .catch((err) => {
-                    console.error("Failed to fetch user profile: ", err);
-                    localStorage.removeItem("token");
-                    setState({ 
+        const loadUserData = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                setIsLoading(true);
+                try {
+                    const user = await AuthService.getUserProfile();
+                    setState({
+                        user,
+                        isAuthenticated: true,
+                        isLoading: false,
+                        error: null,
+                    });
+                } catch (err) {
+                    console.error('Failed to fetch user profile:', err);
+                    localStorage.removeItem('token');
+                    setState({
                         user: null,
                         isAuthenticated: false,
                         isLoading: false,
-                        error: null
+                        error: null,
                     });
-                });
-        }
+                    toast.error('Session expired. Please log in again.');
+                } finally {
+                    setIsLoading(false);
+                }
+            } else {
+                setState((prevState) => ({
+                    ...prevState,
+                    isLoading: false,
+                }));
+            }
+        };
+    
+        loadUserData();
     }, []);
+    
 
     return (
         <AuthContext.Provider value={{
@@ -178,7 +177,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
             login: login,
             logout: logout,
             register: register,
-            getUserProfile: getUserProfile,
+
             loginGoogle
         }}>
             {children}
